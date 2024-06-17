@@ -320,8 +320,6 @@ fig.add_trace(go.Scatter(
 ))
 fig.update_layout(
     title=f'with respect to {sensitivity_param}',
-    # xaxis_title=sensitivity_param,
-    # yaxis_title='Option Price',
     xaxis=dict(
                 title = sensitivity_param,
                 tickfont=dict(size=16),
