@@ -7,22 +7,31 @@ import streamlit.components.v1 as components
 import plotly.colors
 import plotly.graph_objects as go
 
-# Monte Carlo Pricing Model for European Options
-def monte_carlo_option_pricing(S0, K, T, r, sigma, num_simulations):
+# Monte Carlo Pricing Model for European and Asian Options
+def monte_carlo_option_pricing(S0, K, T, r, sigma, num_simulations, option_type):
     dt = T / num_simulations
     payoff_sum = 0
 
     for _ in range(num_simulations):
         S = S0
+        path = []
         for _ in range(int(T / dt)):
             S *= np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * np.random.normal())
-        payoff_sum += max(S - K, 0)
+            path.append(S)
+        
+        if option_type == "Asian":
+            average_price = np.mean(path)
+            payoff = max(average_price - K, 0)
+        else:
+            payoff = max(S - K, 0)
+        
+        payoff_sum += payoff
 
     option_price = np.exp(-r * T) * (payoff_sum / num_simulations)
     return option_price
-
+    
 # Binomial Pricing Model for European and American Options
-def binomial_option_pricing(S0, K, T, r, sigma, n, option_type="European"):
+def binomial_option_pricing(S0, K, T, r, sigma, n, option_type):
     dt = T / n
     u = np.exp(sigma * np.sqrt(dt))
     d = np.exp(-sigma * np.sqrt(dt))
@@ -98,24 +107,9 @@ def parameter_sensitivity_analysis(model, S0, K, T, r, sigma, param, values, **k
             results[value] = model(S0, K, T, r, value, **kwargs)
     return results
 
-# Monte Carlo Pricing Model for Asian Options
-def monte_carlo_asian_option_pricing(S0, K, T, r, sigma, num_simulations):
-    dt = T / num_simulations
-    payoff_sum = 0
-
-    for _ in range(num_simulations):
-        S = S0
-        path = []
-        for _ in range(int(T / dt)):
-            S *= np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * np.random.normal())
-            path.append(S)
-        average_price = np.mean(path)
-        payoff_sum += max(average_price - K, 0)
-
-    option_price = np.exp(-r * T) * (payoff_sum / num_simulations)
-    return option_price
-
-# Streamlit Interface
+#######################
+# Streamlit Interface #
+#######################
 stl.title("Option Pricing Models")
 stl.sidebar.header("User Input Parameters")
 
@@ -142,8 +136,8 @@ if ticker:
 with stl.spinner("Calculating option prices..."):
     colors = plotly.colors.qualitative.Plotly
     if option_type == "European":
-        mc_price = monte_carlo_option_pricing(S0, K, T, r, sigma, num_simulations)
-        binomial_price = binomial_option_pricing(S0, K, T, r, sigma, n, option_type="European")
+        mc_price = monte_carlo_option_pricing(S0, K, T, r, sigma, num_simulations, "European")
+        binomial_price = binomial_option_pricing(S0, K, T, r, sigma, n, "European")
         bs_price = black_scholes_option_pricing(S0, K, T, r, sigma)
         greeks = black_scholes_greeks(S0, K, T, r, sigma)
 
@@ -232,7 +226,7 @@ with stl.spinner("Calculating option prices..."):
         stl.plotly_chart(fig)
 
     elif option_type == "American":
-        binomial_price = binomial_option_pricing(S0, K, T, r, sigma, n, option_type="American")
+        binomial_price = binomial_option_pricing(S0, K, T, r, sigma, n, "American")
         # Display results in a table
         stl.subheader("Option Prices")
         results = pd.DataFrame({
@@ -261,10 +255,9 @@ with stl.spinner("Calculating option prices..."):
         </style>
         {html_table}
         """, height=100)
-        # stl.table(results)
 
     elif option_type == "Asian":
-        mc_asian_price = monte_carlo_asian_option_pricing(S0, K, T, r, sigma, num_simulations)
+        mc_asian_price = monte_carlo_option_pricing(S0, K, T, r, sigma, num_simulations,"Asian")
         # Display results in a table
         stl.subheader("Option Prices")
         results = pd.DataFrame({
@@ -293,7 +286,6 @@ with stl.spinner("Calculating option prices..."):
         </style>
         {html_table}
         """, height=100)
-        # stl.table(results)
 
 # Sensitivity Analysis
 sensitivity_labels = {
