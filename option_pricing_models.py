@@ -84,8 +84,20 @@ def black_scholes_greeks(S, K, T, r, sigma):
 def get_real_market_data(ticker):
     stock = yf.Ticker(ticker)
     hist = stock.history(period="1y")
-    current_price = stock.history(period="1d")['Close'].iloc[0]
+    if hist.empty:
+        stl.error("The ticker symbol is not valid or data is not available.")
+        return None
+    
+    current_price = stock.history(period="1d")['Close']
+    
+    # Check if the current price DataFrame is empty
+    if current_price.empty:
+        stl.error("Unable to fetch the current price for the ticker.")
+        return None
+    
+    current_price = current_price.iloc[0]
     volatility = hist['Close'].pct_change().std() * np.sqrt(252)
+    
     return {
         'current_price': current_price,
         'volatility': volatility
@@ -127,10 +139,11 @@ ticker = stl.sidebar.text_input("Enter ticker for real market data")
 # Fetch real market data if ticker is provided
 if ticker:
     market_data = get_real_market_data(ticker)
-    S0 = market_data['current_price']
-    sigma = market_data['volatility']
-    stl.sidebar.write(f"Current Price: {S0:.2f}")
-    stl.sidebar.write(f"Volatility: {sigma:.2f}")
+    if market_data:
+        S0 = market_data['current_price']
+        sigma = market_data['volatility']
+        stl.sidebar.write(f"Current Price: {S0:.2f}")
+        stl.sidebar.write(f"Volatility: {sigma:.2f}")
 
 # Calculate option prices
 with stl.spinner("Calculating option prices..."):
