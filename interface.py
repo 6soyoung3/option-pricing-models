@@ -26,6 +26,7 @@ if ticker:
         stl.sidebar.write(f"Current Price: {default_S0:.2f}")
         stl.sidebar.write(f"Volatility: {default_sigma:.2f}")
 
+        # Displays historical prices and volatility using line plots
         stl.subheader(f"Historical Data for {ticker.upper()}")
         hist_prices = market_data["historical_prices"]
         hist_volatility = market_data["historical_volatility"]
@@ -51,6 +52,7 @@ if ticker:
         fig_hist_volatility.update_traces(hovertemplate='Date=%{x}<br>Volatility=%{y}', name="")
         stl.plotly_chart(fig_hist_volatility)
 else:
+    # Sets default values for the initial stock price and volatility if no ticker is provided
     default_S0 = 100.0
     default_sigma = 0.2
 
@@ -184,7 +186,7 @@ with stl.spinner("Displaying Greeks..."):
         height=100,
     )
 
-    # Visualising Greeks
+    # Visualising the Greeks (Delta, Gamma, Theta, Vega, Rho) in a table and a bar chart
     greek_names = list(greeks.keys())
     greek_values = list(greeks.values())
 
